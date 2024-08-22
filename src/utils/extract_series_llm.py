@@ -15,12 +15,8 @@ from sklearn.model_selection import train_test_split
 #     scaler_partitions=[]
 
 def load_data(number,dataset_name='vivli_mdi'):
-    if dataset_name == 'palmas':
-        cgm_values = np.load(os.path.join(cons.PATH_PROJECT_DATA, 'para_cristina_II', number, 'X_list.pkl'),
-                     allow_pickle=True)
-        cgm_times = np.load(os.path.join(cons.PATH_PROJECT_DATA, 'para_cristina_II', number, 'X_times_list.pkl'),
-                     allow_pickle=True)
-    elif dataset_name == 'vivli_mdi':
+
+    if dataset_name == 'vivli_mdi':
         cgm_values = np.load(os.path.join(cons.PATH_PROJECT_DATA, 'VIVLI', str(number) + '_values.pkl'),
                              allow_pickle=True)
         cgm_times = np.load(os.path.join(cons.PATH_PROJECT_DATA, 'VIVLI', str(number) + '_times.pkl'),

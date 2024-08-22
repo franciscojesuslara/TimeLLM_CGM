@@ -81,7 +81,7 @@ def parse_arguments(parser):
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=8)
     parser.add_argument('--max_steps', type=int, default=1000)
-    parser.add_argument('--read_plot', type=bool, default=True)
+    parser.add_argument('--read_plot', type=bool, default=False)
     return parser.parse_args()
 
 
