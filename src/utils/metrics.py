@@ -163,7 +163,11 @@ def compute_losses(group):
         'rmse': rmse_loss,
     })
 def evaluate_performance(df, columnas, df_val=None):
-    df = df.reset_index()[columnas]
+    try:
+        df = df.reset_index()[columnas]
+    except:
+        df = df.reset_index(drop=True)[columnas]
+
 
     melted_df = df.melt(id_vars=['unique_id', 'cgm'], var_name='model', value_name='predicted')
     losses = melted_df.groupby(['unique_id', 'model']).apply(compute_losses).reset_index()
@@ -192,6 +196,20 @@ def evaluate_performance(df, columnas, df_val=None):
     print(best_model_per_patient['model'].value_counts())
     return losses, aggregated_losses, best_model_per_patient
 
+
+def evaluate_performance_intrapatient(df, columnas,):
+    try:
+        df = df.reset_index()[columnas]
+    except:
+        df = df.reset_index(drop=True)[columnas]
+
+    melted_df = df.melt(id_vars=['unique_id', 'cgm'], var_name='model', value_name='predicted')
+    losses = melted_df.groupby(['unique_id', 'model']).apply(compute_losses).reset_index()
+    aggregated_losses = losses.groupby('model').agg(
+        mse_mean=('mse', 'mean'),
+        mae_mean=('mae', 'mean'),
+        rmse_mean=('rmse', 'mean')).reset_index()
+    return losses, aggregated_losses,
 
 def evaluate_performance_llm(df, columnas):
     df = df.reset_index()[columnas]

@@ -146,8 +146,8 @@ if __name__ == "__main__":
             time_col="time",
             target_col="cgm",
             verbose=True,
-            n_windows=10,
-            step_size=50)
+            n_windows=50,
+            step_size=1)
 
         # nf.fit(df=train,
         #        id_col="unique_id",
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         total_time = time.time() - start_time
         print(f'Tiempo total de entrenamiento: {total_time:.2f} sec')
         start_time = time.time()
-        forecasts = nf.predict(futr_df=test, verbose=True)
+        forecasts = nf.predict(verbose=True)
         total_time = time.time() - start_time
         print(f'Tiempo total de prediccion: {total_time:.2f} sec')
         forecasts = forecasts.reset_index()

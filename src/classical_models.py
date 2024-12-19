@@ -3,7 +3,7 @@ from neuralforecast.auto import AutoNHITS, AutoLSTM, AutoTCN, AutoTiDE, AutoTSMi
 from numpy import count_nonzero
 from neuralforecast import NeuralForecast
 from utils.extract_series_llm import extract_series_general
-from utils.metrics import evaluate_performance
+from utils.metrics import evaluate_performance, evaluate_performance_intrapatient
 import argparse
 import time
 import numpy as np
@@ -19,12 +19,17 @@ import pandas as pd
 
 def parse_arguments(parser):
     parser.add_argument('--dataset_name', type=str, default='vivli_mdi')
-    parser.add_argument('--prediction_horizon', type=int, default=8)
+    parser.add_argument('--prediction_horizon', type=int, default=24)
+    parser.add_argument('--ts_length', type=int, default=288)
     parser.add_argument('--n_samples', type=int, default=50)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=18)
     parser.add_argument('--n_trials', type=int, default=50)
     parser.add_argument('--read_plot', type=bool, default=False)
+    parser.add_argument('--n_windows', type=int, default=50)
+    parser.add_argument('--step_size', type=int, default=1)
+    parser.add_argument('--freq_sample', type=int, default=5)
+    parser.add_argument('--test_iterations', type=int, default=5)
     return parser.parse_args()
 
 
@@ -85,14 +90,18 @@ if __name__ == "__main__":
                                     f'losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))
 
         administation = args.dataset_name.split('_')[1]
-        ph = args.prediction_horizon * 15
+        ph = args.prediction_horizon * args.freq_sample
         plot_metric(aggregated_losses_test, administation, ph, 'mae')
 
     else:
 
         df, train, test = extract_series_general(dataset_name=args.dataset_name,
                                                  n_samples=args.n_samples,
-                                                 prediction_horizon=args.prediction_horizon
+                                                 prediction_horizon=args.prediction_horizon,
+                                                 ts_length= args.ts_length,
+                                                 freq_sample =args.freq_sample,
+                                                 step_size=args.step_size,
+                                                 n_windows=args.n_windows,
                                                  )
 
 
@@ -124,7 +133,7 @@ if __name__ == "__main__":
             # TODO add local scaler param 'standard', 'robust', 'robust-iqr', 'minmax' or 'boxcox'
         nf = NeuralForecast(
             models = model_list,
-            freq = '15min'
+            freq = f'{args.freq_sample}min'
         )
 
         cv_df = nf.cross_validation(
@@ -133,21 +142,42 @@ if __name__ == "__main__":
             time_col="time",
             target_col="cgm",
             verbose=True,
-            n_windows=50,
-            step_size=1)
+            n_windows=args.n_windows,
+            step_size=args.step_size)
 
-        forecasts = nf.predict(futr_df=test, verbose=True)
-        # columns_list=['AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
-        columns_list=['AutoTCN', 'AutoLSTM', 'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
 
+
+        # columns_list=['AutoTCN',  'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
+        columns_list = ['AutoTCN', 'AutoLSTM', 'cgm',
+                        'unique_id']
         losses_val, aggregated_losses_val, best_model_per_patient_val = evaluate_performance(cv_df, columns_list)
+
         test = test.sort_values(by=['unique_id', 'time'])
-        forecasts = forecasts.sort_values(by=['unique_id', 'time'])
-        forecasts['cgm'] = test['cgm'].values
-        losses_test, aggregated_losses_test, best_model_per_patient_test = evaluate_performance(forecasts, columns_list, best_model_per_patient_val)
+        forecasts_test=pd.DataFrame()
+        losses_test_test_list = []
+        for iterations in np.arange(args.test_iterations):
+            test_samples = args.ts_length + iterations
+            df_to_predict= test.groupby("unique_id").apply(lambda x: x.iloc[iterations:test_samples])
+            df_real = test.groupby("unique_id").apply(lambda x: x.iloc[test_samples:test_samples+args.prediction_horizon])
+            forecasts = nf.predict(df=df_to_predict, verbose=True)
+            forecasts = forecasts.sort_values(by=['unique_id', 'time'])
+            forecasts['cgm'] = df_real['cgm'].values
+            forecasts['unique_id'] = forecasts.index
+            forecasts_test = pd.concat([forecasts_test, forecasts], ignore_index=True)
+            print(1)
+            losses_test, aggregated_losses_test = evaluate_performance_intrapatient(forecasts,
+                                                                                    columns_list)
+            losses_test_test_list.append(losses_test)
+
+        df_loses_test = pd.concat(losses_test_test_list)
+        result_intra = df_loses_test.groupby(["unique_id", "model"])[['mse', 'mae', 'rmse']].agg(["mean", "std"]).reset_index()
+        result_intra.columns = ['_'.join(col).strip() for col in result_intra.columns.values]
+        result_intra.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
+                             f'results_intra_{args.dataset_name}_{args.prediction_horizon}.csv'))
+        losses_test, aggregated_losses_test, best_model_per_patient_test = evaluate_performance(forecasts_test, columns_list, best_model_per_patient_val)
         train = train.reset_index()
         test = test.reset_index()
-        forecasts=forecasts.reset_index()
+
         personalized_val = {
             'model' : 'Personalized',
             'mse_mean' : best_model_per_patient_val['mse'].mean(),
@@ -167,10 +197,12 @@ if __name__ == "__main__":
             'rmse_std': best_model_per_patient_test['rmse_test'].std()}
 
         aggregated_losses_val = aggregated_losses_val.append(personalized_val, ignore_index=True)
-        aggregated_losses_test = aggregated_losses_test.append(personalized_test, ignore_index=True)
+        personalized_val = personalized_val.reindex(columns=aggregated_losses_val.columns)
+        aggregated_losses_val = pd.concat([aggregated_losses_val, personalized_val], ignore_index=True)
+        personalized_test = personalized_test.reindex(columns=aggregated_losses_test.columns)
+        aggregated_losses_test = pd.concat([aggregated_losses_test, personalized_test], ignore_index=True)
 
-
-        forecasts.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
+        forecasts_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                     f'forecasts_{args.dataset_name}_{args.prediction_horizon}.csv'))
         aggregated_losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                     f'aggregated_losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))

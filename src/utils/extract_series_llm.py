@@ -30,7 +30,7 @@ def load_data(number,dataset_name='vivli_mdi'):
     return cgm_values, cgm_times
 
 
-def extract_series_individual(cgm_values, cgm_times, patients_id, dataset_name='vivli'):
+def extract_series_individual(cgm_values, cgm_times, patients_id, freq_sample, dataset_name='vivli',):
     dataframe_general = pd.DataFrame(columns=['unique_id','time','cgm'])
     for number, blocks in enumerate(cgm_values):
         if len(blocks) > 1:
@@ -38,16 +38,19 @@ def extract_series_individual(cgm_values, cgm_times, patients_id, dataset_name='
             df = pd.DataFrame(np.asarray(blocks), columns=['cgm'])
             df.index = pd.DatetimeIndex(block_time)
             if dataset_name == 'palmas':
-                df2 = df['cgm'].resample("15min", offset='1T').mean().interpolate().to_frame()
+                df2 = df['cgm'].resample(f"{freq_sample}min", offset='1min').mean().interpolate().to_frame()
             else:
-                df2 = df['cgm'].resample("15min", offset='1T').mean().interpolate().to_frame()
+                df2 = df['cgm'].resample(f"{freq_sample}min", offset='1min').mean().interpolate().to_frame()
             df2['unique_id'] = '{}_{}'.format(patients_id, number)
             df2['time'] = df2.index
             dataframe_general = pd.concat([dataframe_general, df2])
     return dataframe_general
 
 
-def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_horizon=4, ts_length=96):
+def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_horizon=4, ts_length=96,
+                           freq_sample= 15, step_size = 1, n_windows = 50):
+
+
     dataframe_general = pd.DataFrame(columns=['unique_id', 'time', 'cgm'])
     train = pd.DataFrame(columns=['unique_id', 'time', 'cgm'])
     test = pd.DataFrame(columns=['unique_id', 'time', 'cgm'])
@@ -58,7 +61,7 @@ def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_
             patients_id = np.load(os.path.join(cons.PATH_PROJECT_DATA, 'patients_id_pump.npy'))
         for i in patients_id:
             cgm_values, cgm_times = load_data(i, dataset_name)
-            df_individual = extract_series_individual(cgm_values, cgm_times, i, dataset_name)
+            df_individual = extract_series_individual(cgm_values, cgm_times, i, freq_sample, dataset_name)
             largest_window = df_individual['unique_id'].mode()[0]
             df_individual = df_individual[df_individual['unique_id'] == largest_window]
             dataframe_general = pd.concat([dataframe_general, df_individual])
@@ -68,15 +71,31 @@ def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_
         dataframe_general = dataframe_general[dataframe_general['unique_id'].isin(largest_samples)]
 
         for valor in largest_samples:
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor].tail(prediction_horizon)
-            test = pd.concat([test, df_valor])
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:-prediction_horizon]
+            # df_valor = dataframe_general[dataframe_general['unique_id'] == valor].tail(prediction_horizon)
+            # test = pd.concat([test, df_valor])
+            # df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:-prediction_horizon]
+            # train = pd.concat([train, df_valor])
+
+            train_size=ts_length + step_size* n_windows
+
+            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:train_size]
             train = pd.concat([train, df_valor])
+
+            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size:]
+            test = pd.concat([test, df_valor])
     else:
         for valor in dataframe_general['unique_id'].unique():
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor].tail(prediction_horizon)
-            test = pd.concat([test, df_valor])
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:-prediction_horizon]
+            # df_valor = dataframe_general[dataframe_general['unique_id'] == valor].tail(prediction_horizon)
+            # test = pd.concat([test, df_valor])
+            # df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:-prediction_horizon]
+            # train = pd.concat([train, df_valor])
+
+            train_size = ts_length + step_size * n_windows
+
+            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:train_size]
             train = pd.concat([train, df_valor])
+
+            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size:]
+            test = pd.concat([test, df_valor])
 
     return dataframe_general, train.reset_index(drop=True), test.reset_index(drop=True)
