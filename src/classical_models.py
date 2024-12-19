@@ -196,7 +196,6 @@ if __name__ == "__main__":
             'rmse_mean': best_model_per_patient_test['rmse_test'].mean(),
             'rmse_std': best_model_per_patient_test['rmse_test'].std()}
 
-        aggregated_losses_val = aggregated_losses_val.append(personalized_val, ignore_index=True)
         personalized_val = personalized_val.reindex(columns=aggregated_losses_val.columns)
         aggregated_losses_val = pd.concat([aggregated_losses_val, personalized_val], ignore_index=True)
         personalized_test = personalized_test.reindex(columns=aggregated_losses_test.columns)
