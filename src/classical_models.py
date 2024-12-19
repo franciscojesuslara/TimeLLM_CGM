@@ -147,9 +147,9 @@ if __name__ == "__main__":
 
 
 
-        # columns_list=['AutoTCN',  'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
-        columns_list = ['AutoTCN', 'AutoLSTM', 'cgm',
-                        'unique_id']
+        columns_list=['AutoTCN',  'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
+        # columns_list = ['AutoTCN', 'AutoLSTM', 'cgm',
+        #                 'unique_id']
         losses_val, aggregated_losses_val, best_model_per_patient_val = evaluate_performance(cv_df, columns_list)
 
         test = test.sort_values(by=['unique_id', 'time'])
@@ -196,9 +196,9 @@ if __name__ == "__main__":
             'rmse_mean': best_model_per_patient_test['rmse_test'].mean(),
             'rmse_std': best_model_per_patient_test['rmse_test'].std()}
 
-        personalized_val = personalized_val.reindex(columns=aggregated_losses_val.columns)
+        personalized_val = pd.DataFrame([personalized_val],columns=aggregated_losses_val.columns)
         aggregated_losses_val = pd.concat([aggregated_losses_val, personalized_val], ignore_index=True)
-        personalized_test = personalized_test.reindex(columns=aggregated_losses_test.columns)
+        personalized_test = pd.DataFrame([personalized_test],columns=aggregated_losses_test.columns)
         aggregated_losses_test = pd.concat([aggregated_losses_test, personalized_test], ignore_index=True)
 
         forecasts_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
