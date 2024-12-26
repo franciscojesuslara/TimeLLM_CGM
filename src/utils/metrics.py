@@ -213,14 +213,14 @@ def evaluate_performance_intrapatient(df, columnas,):
 
 def evaluate_performance_llm(df, columnas):
     df = df.reset_index()[columnas]
-    df = df[df['unique_id'] != '1536_1']
-    df = df[df['unique_id'] != '1170_0']
-    df = df[df['unique_id'] != '1271_14']
-
-    df = df[df['unique_id'] != '1711_1']
-    df = df[df['unique_id'] != '870_1']
-    df = df[df['unique_id'] != '1611_4']
-    df = df[df['unique_id'] != '1622_1']
+    # df = df[df['unique_id'] != '1536_1']
+    # df = df[df['unique_id'] != '1170_0']
+    # df = df[df['unique_id'] != '1271_14']
+    #
+    # df = df[df['unique_id'] != '1711_1']
+    # df = df[df['unique_id'] != '870_1']
+    # df = df[df['unique_id'] != '1611_4']
+    # df = df[df['unique_id'] != '1622_1']
 
     melted_df = df.melt(id_vars=['unique_id', 'cgm'], var_name='model', value_name='predicted')
     losses = melted_df.groupby(['unique_id', 'model']).apply(compute_losses).reset_index()

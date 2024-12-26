@@ -12,7 +12,7 @@ bbd_name='vivli'
 max_epochs=15
 samples_day=288
 seq_len= 96
-
+ohio_patients = [540, 544, 552, 559, 563, 567, 570, 575, 584, 588, 591, 596]
 config_lstm = {
   "input_size": tune.choice([seq_len]),
   "h": None,

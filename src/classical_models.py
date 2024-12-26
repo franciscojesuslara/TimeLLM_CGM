@@ -18,7 +18,7 @@ import pandas as pd
 
 
 def parse_arguments(parser):
-    parser.add_argument('--dataset_name', type=str, default='vivli_mdi')
+    parser.add_argument('--dataset_name', type=str, default='Ohio')
     parser.add_argument('--prediction_horizon', type=int, default=24)
     parser.add_argument('--ts_length', type=int, default=288)
     parser.add_argument('--n_samples', type=int, default=50)
@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
 
 
-        columns_list=['AutoTCN',  'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
-        # columns_list = ['AutoTCN', 'AutoLSTM', 'cgm',
+        columns_list=['AutoTCN', 'AutoLSTM', 'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
+        # columns_list = ['AutoTCN', , 'cgm',
         #                 'unique_id']
         losses_val, aggregated_losses_val, best_model_per_patient_val = evaluate_performance(cv_df, columns_list)
 
