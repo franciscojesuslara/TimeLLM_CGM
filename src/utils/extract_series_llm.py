@@ -40,7 +40,21 @@ def load_data(number,dataset_name='vivli_mdi'):
             }
             datos.append(evento)
 
-        df = pd.DataFrame(datos)
+        df1 = pd.DataFrame(datos)
+
+        archivo_xml = os.path.join(cons.PATH_PROJECT_DATA, 'Ohio', f"{number}-ws-testing.xml")
+        tree = ET.parse(archivo_xml)
+        root = tree.getroot()
+        datos = []
+        for event in root.find('glucose_level').findall('event'):
+            evento = {
+                "timestamp": event.get("ts"),
+                "glucose_value": event.get("value")
+            }
+            datos.append(evento)
+
+        df2 = pd.DataFrame(datos)
+        df = pd.concat([df1, df2], axis=0)
 
         df['glucose_value'] = pd.to_numeric(df['glucose_value'])
         df.index = pd.DatetimeIndex(df['timestamp'],)
@@ -103,7 +117,8 @@ def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_
             df_individual = extract_series_individual(cgm_values, cgm_times, i, freq_sample, dataset_name)
             largest_window = df_individual['unique_id'].mode()[0]
             df_individual = df_individual[df_individual['unique_id'] == largest_window]
-            dataframe_general = pd.concat([dataframe_general, df_individual])
+            if len(df_individual) >= (2*ts_length + step_size* n_windows + 2*prediction_horizon +5*step_size):
+                dataframe_general = pd.concat([dataframe_general, df_individual])
 
     if n_samples is not None:
         largest_samples = dataframe_general['unique_id'].value_counts().nlargest(n_samples).index

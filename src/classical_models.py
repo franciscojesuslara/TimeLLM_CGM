@@ -21,7 +21,7 @@ def parse_arguments(parser):
     parser.add_argument('--dataset_name', type=str, default='Ohio')
     parser.add_argument('--prediction_horizon', type=int, default=24)
     parser.add_argument('--ts_length', type=int, default=288)
-    parser.add_argument('--n_samples', type=int, default=50)
+    parser.add_argument('--n_samples', type=int, default=12)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=18)
     parser.add_argument('--n_trials', type=int, default=50)
@@ -104,6 +104,7 @@ if __name__ == "__main__":
                                                  n_windows=args.n_windows,
                                                  )
 
+        print(test['unique_id'].value_counts())
 
         start_time = time.time()
 
@@ -148,13 +149,14 @@ if __name__ == "__main__":
 
 
         columns_list=['AutoTCN', 'AutoLSTM', 'AutoNHITS', 'AutoTiDE', 'AutoTSMixer', 'AutoPatchTST','cgm', 'unique_id']
-        # columns_list = ['AutoTCN', , 'cgm',
+        # columns_list = ['AutoTCN', 'cgm',
         #                 'unique_id']
         losses_val, aggregated_losses_val, best_model_per_patient_val = evaluate_performance(cv_df, columns_list)
 
         test = test.sort_values(by=['unique_id', 'time'])
         forecasts_test=pd.DataFrame()
         losses_test_test_list = []
+        test=test.reset_index(drop=True)
         for iterations in np.arange(args.test_iterations):
             test_samples = args.ts_length + iterations
             df_to_predict= test.groupby("unique_id").apply(lambda x: x.iloc[iterations:test_samples])

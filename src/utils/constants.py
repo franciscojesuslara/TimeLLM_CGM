@@ -16,15 +16,15 @@ ohio_patients = [540, 544, 552, 559, 563, 567, 570, 575, 584, 588, 591, 596]
 config_lstm = {
   "input_size": tune.choice([seq_len]),
   "h": None,
-  "encoder_hidden_size": tune.choice([50, 100, 200, 300]),
+  "encoder_hidden_size": tune.choice([50, 100,]),
   "encoder_n_layers": tune.randint(1, 4),
   "context_size": tune.choice([5, 10, 50]),
-  "decoder_hidden_size": tune.choice([64, 128, 256, 512]),
+  "decoder_hidden_size": tune.choice([64, 128, 256, ]),
   "learning_rate": tune.loguniform(1e-4, 1e-2),
   "scaler_type": tune.choice(['robust', 'minmax', 'standard']),
   "batch_size": tune.choice([3, 6, 10]), 
   "random_seed": tune.randint(1, 5),
-  "max_steps": tune.choice([500]),
+  "max_steps": tune.choice([100]),
   "val_check_steps": tune.choice([10])
 }
 config_tcn = {
