@@ -41,20 +41,21 @@ def load_data(number,dataset_name='vivli_mdi'):
             datos.append(evento)
 
         df1 = pd.DataFrame(datos)
+        df1['timestamp'] = pd.to_datetime(df1['timestamp'], dayfirst =True)
+        df = df1.sort_values(by=['timestamp'])
 
-        archivo_xml = os.path.join(cons.PATH_PROJECT_DATA, 'Ohio', f"{number}-ws-testing.xml")
-        tree = ET.parse(archivo_xml)
-        root = tree.getroot()
-        datos = []
-        for event in root.find('glucose_level').findall('event'):
-            evento = {
-                "timestamp": event.get("ts"),
-                "glucose_value": event.get("value")
-            }
-            datos.append(evento)
-
-        df2 = pd.DataFrame(datos)
-        df = pd.concat([df1, df2], axis=0)
+        # archivo_xml = os.path.join(cons.PATH_PROJECT_DATA, 'Ohio', f"{number}-ws-testing.xml")
+        # tree = ET.parse(archivo_xml)
+        # root = tree.getroot()
+        # datos = []
+        # for event in root.find('glucose_level').findall('event'):
+        #     evento = {
+        #         "timestamp": event.get("ts"),
+        #         "glucose_value": event.get("value")}
+        #     datos.append(evento)
+        #
+        # df2 = pd.DataFrame(datos)
+        # df = pd.concat([df1, df2], axis=0)
 
         df['glucose_value'] = pd.to_numeric(df['glucose_value'])
         df.index = pd.DatetimeIndex(df['timestamp'],)
@@ -80,7 +81,7 @@ def load_data(number,dataset_name='vivli_mdi'):
     return cgm_values, cgm_times
 
 
-def extract_series_individual(cgm_values, cgm_times, patients_id, freq_sample, dataset_name='vivli',):
+def extract_series_individual(cgm_values, cgm_times, patients_id, freq_sample):
     dataframe_general = pd.DataFrame(columns=['unique_id','time','cgm'])
     for number, blocks in enumerate(cgm_values):
         if len(blocks) > 1:
@@ -88,10 +89,7 @@ def extract_series_individual(cgm_values, cgm_times, patients_id, freq_sample, d
             df = pd.DataFrame(np.asarray(blocks), columns=['cgm'])
             df.index = pd.DatetimeIndex(block_time[:len(blocks)])
             df['cgm']= pd.to_numeric(df['cgm'])
-            if dataset_name == 'palmas':
-                df2 = df['cgm'].resample(f"{freq_sample}min", offset='1min').mean().interpolate().to_frame()
-            else:
-                df2 = df['cgm'].resample(f"{freq_sample}min", offset='1min').mean().interpolate().to_frame()
+            df2 = df['cgm'].resample(f"{freq_sample}min", offset='1min').mean().interpolate().to_frame()
             df2['unique_id'] = '{}_{}'.format(patients_id, number)
             df2['time'] = df2.index
             dataframe_general = pd.concat([dataframe_general, df2])
@@ -99,7 +97,7 @@ def extract_series_individual(cgm_values, cgm_times, patients_id, freq_sample, d
 
 
 def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_horizon=4, ts_length=96,
-                           freq_sample= 15, step_size = 1, n_windows = 50):
+                           freq_sample= 15, step_size = 1, n_windows = 50, step_size_test=24 ):
 
 
     dataframe_general = pd.DataFrame(columns=['unique_id', 'time', 'cgm'])
@@ -114,10 +112,10 @@ def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_
             patients_id = cons.ohio_patients
         for i in patients_id:
             cgm_values, cgm_times = load_data(i, dataset_name)
-            df_individual = extract_series_individual(cgm_values, cgm_times, i, freq_sample, dataset_name)
+            df_individual = extract_series_individual(cgm_values, cgm_times, i, freq_sample)
             largest_window = df_individual['unique_id'].mode()[0]
             df_individual = df_individual[df_individual['unique_id'] == largest_window]
-            if len(df_individual) >= (2*ts_length + step_size* n_windows + 2*prediction_horizon +5*step_size):
+            if len(df_individual) >= (2*ts_length + step_size* n_windows + 2*prediction_horizon +5*step_size_test):
                 dataframe_general = pd.concat([dataframe_general, df_individual])
 
     if n_samples is not None:

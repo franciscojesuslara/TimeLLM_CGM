@@ -12,24 +12,20 @@ import utils.constants as cons
 from utils.plotter import plot_results, plot_metric
 import pandas as pd
 
-
-
-
-
-
 def parse_arguments(parser):
     parser.add_argument('--dataset_name', type=str, default='Ohio')
     parser.add_argument('--prediction_horizon', type=int, default=24)
     parser.add_argument('--ts_length', type=int, default=288)
     parser.add_argument('--n_samples', type=int, default=12)
     parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--num_workers_loader', type=int, default=18)
+    parser.add_argument('--num_workers_loader', type=int, default=100)
     parser.add_argument('--n_trials', type=int, default=50)
     parser.add_argument('--read_plot', type=bool, default=False)
     parser.add_argument('--n_windows', type=int, default=50)
     parser.add_argument('--step_size', type=int, default=1)
     parser.add_argument('--freq_sample', type=int, default=5)
     parser.add_argument('--test_iterations', type=int, default=5)
+    parser.add_argument('--test_step_size', type=int, default=24)
     return parser.parse_args()
 
 
@@ -158,8 +154,8 @@ if __name__ == "__main__":
         losses_test_test_list = []
         test=test.reset_index(drop=True)
         for iterations in np.arange(args.test_iterations):
-            test_samples = args.ts_length + iterations
-            df_to_predict= test.groupby("unique_id").apply(lambda x: x.iloc[iterations:test_samples])
+            test_samples = iterations * args.test_step_size + args.ts_length
+            df_to_predict= test.groupby("unique_id").apply(lambda x: x.iloc[:test_samples])
             df_real = test.groupby("unique_id").apply(lambda x: x.iloc[test_samples:test_samples+args.prediction_horizon])
             forecasts = nf.predict(df=df_to_predict, verbose=True)
             forecasts = forecasts.sort_values(by=['unique_id', 'time'])
