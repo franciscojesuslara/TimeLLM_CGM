@@ -153,64 +153,9 @@ if __name__ == "__main__":
             local_scaler_type=args.scaler
         )
 
-        cv_df = nf.cross_validation(
-            df=train,
-            id_col="unique_id",
-            time_col="time",
-            target_col="cgm",
-            verbose=True,
-            n_windows=args.n_windows,
-            step_size=args.step_size
-        )
+        nf.fit(df=df_train, val_size=12)
+        forecasts = nf.predict(df=df_to_predict, verbose=True)
 
-        total_time = time.time() - start_time
-        print(f'Tiempo total de entrenamiento: {total_time:.2f} sec')
-        columns_list = ['TimeLLM', 'cgm', 'unique_id']
-        losses_val, aggregated_losses_val, best_model_per_patient_val = evaluate_performance_llm(cv_df, columns_list)
-
-        start_time = time.time()
-        test = test.sort_values(by=['unique_id', 'time'])
-        forecasts_test = pd.DataFrame()
-        losses_test_test_list = []
-        for iterations in np.arange(args.test_iterations):
-            test_samples = args.input_seq_len + iterations
-            df_to_predict = test.groupby("unique_id").apply(lambda x: x.iloc[iterations:test_samples])
-            df_real = test.groupby("unique_id").apply(
-                lambda x: x.iloc[test_samples:test_samples + args.prediction_horizon])
-            forecasts = nf.predict(df=df_to_predict, verbose=True)
-            forecasts = forecasts.sort_values(by=['unique_id', 'time'])
-            forecasts['cgm'] = df_real['cgm'].values
-            forecasts['unique_id'] = forecasts.index
-            forecasts_test = pd.concat([forecasts_test, forecasts], ignore_index=True)
-            losses_test, aggregated_losses_test = evaluate_performance_intrapatient(forecasts,
-                                                                                    columns_list)
-            losses_test_test_list.append(losses_test)
-
-        total_time = time.time() - start_time
-        print(f'Tiempo total de prediccion: {total_time:.2f} sec')
-
-        df_loses_test = pd.concat(losses_test_test_list)
-        result_intra = df_loses_test.groupby(["unique_id", "model"])[['mse', 'mae', 'rmse']].agg(
-            ["mean", "std"]).reset_index()
-        result_intra.columns = ['_'.join(col).strip() for col in result_intra.columns.values]
-        result_intra.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                         f'results_{args.model_name}_intra_{args.dataset_name}_{args.prediction_horizon}.csv'))
-        losses_test, aggregated_losses_test, best_model_per_patient_test = evaluate_performance(forecasts_test,
-                                                                                                columns_list,
-                                                                                                best_model_per_patient_val)
-        forecasts_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                f'forecasts_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
-        losses_test, aggregated_losses_test, best_model_per_patient_test = evaluate_performance_llm(forecasts_test, columns_list)
-
-        aggregated_losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                            f'aggregated_losses_test_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
-        losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                            f'losses_test_{args.dataset_name}_{args.model_name}_{args.model_name}.csv'))
-        aggregated_losses_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                            f'aggregated_losses_val_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
-
-        losses_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                            f'losses_val_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
-
+        print(forecasts)
 
 
