@@ -62,13 +62,13 @@ def select_llm(name_llm: str):
         llm_config = BertConfig.from_pretrained('bert-base-uncased')
 
         llm_model = BertModel.from_pretrained(
-                'google-bert/bert-base-uncased',
+                'bert-base-uncased',
                 trust_remote_code=True,
                 local_files_only=False,
                 config=llm_config,
             )
         llm_tokenizer= BertTokenizer.from_pretrained(
-                'google-bert/bert-base-uncased',
+                'bert-base-uncased',
                 trust_remote_code=True,
                 local_files_only=False)
     return llm_config, llm_model, llm_tokenizer
