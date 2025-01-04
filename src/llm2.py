@@ -154,9 +154,11 @@ if __name__ == "__main__":
         )
 
         print(train.head())
+        train = train.rename(columns={'time': 'ds', 'cgm': 'y'})
+        test = test.rename(columns={'time': 'ds', 'cgm': 'y'})
 
         nf.fit(df=train, val_size=12)
-        forecasts = nf.predict(df=df_to_predict, verbose=True)
+        forecasts = nf.predict(df=test, verbose=True)
 
         print(forecasts)
 
