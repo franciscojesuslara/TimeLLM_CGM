@@ -17,9 +17,9 @@ from datetime import timedelta
 
 def select_llm(name_llm: str):
     if name_llm == 'gpt':
-        llm_config = GPT2Config.from_pretrained('openai-community/gpt2')
-        llm_model = GPT2Model.from_pretrained('openai-community/gpt2', config=llm_config)
-        llm_tokenizer = GPT2Tokenizer.from_pretrained('openai-community/gpt2')
+        llm_config = GPT2Config.from_pretrained('gpt2')
+        llm_model = GPT2Model.from_pretrained('gpt2', config=llm_config)
+        llm_tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
     elif name_llm == 'llama3':
         llm_config = LlamaConfig.from_pretrained(
