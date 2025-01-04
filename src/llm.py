@@ -142,7 +142,7 @@ if __name__ == "__main__":
                           batch_size=args.batch_size,
                           windows_batch_size=args.windows_batch_size,
                           random_seed=args.seed,
-                          num_workers_loader=args.num_workers_loader,
+                          # num_workers_loader=args.num_workers_loader,
                           max_steps=args.max_steps,
                           )
 
@@ -159,7 +159,8 @@ if __name__ == "__main__":
             target_col="cgm",
             verbose=True,
             n_windows=args.n_windows,
-            step_size=args.step_size)
+            step_size=args.step_size
+        )
 
         total_time = time.time() - start_time
         print(f'Tiempo total de entrenamiento: {total_time:.2f} sec')
