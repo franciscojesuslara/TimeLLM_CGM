@@ -58,7 +58,8 @@ def select_llm(name_llm: str):
             local_files_only=False)
 
     elif name_llm == 'bert':
-        llm_config = BertConfig.from_pretrained('google-bert/bert-base-uncased')
+        # llm_config = BertConfig.from_pretrained('google-bert/bert-base-uncased')
+        llm_config = BertConfig.from_pretrained('bert-base-uncased')
 
         llm_model = BertModel.from_pretrained(
                 'google-bert/bert-base-uncased',
