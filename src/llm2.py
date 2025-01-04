@@ -153,7 +153,7 @@ if __name__ == "__main__":
             local_scaler_type=args.scaler
         )
 
-        nf.fit(df=df_train, val_size=12)
+        nf.fit(df=train, val_size=12)
         forecasts = nf.predict(df=df_to_predict, verbose=True)
 
         print(forecasts)
