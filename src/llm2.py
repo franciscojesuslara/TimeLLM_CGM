@@ -83,6 +83,7 @@ def parse_arguments(parser):
     parser.add_argument('--batch_size', type=int, default=5)
     parser.add_argument('--windows_batch_size', type=int, default=5)
     parser.add_argument('--n_samples', type=int, default=20)
+    parser.add_argument('--n_epochs', type=int, default=10)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=100)
     parser.add_argument('--max_steps', type=int, default=2000)
@@ -151,14 +152,14 @@ if __name__ == "__main__":
         nf = NeuralForecast(
             models=[timellm],
             freq=f'{args.freq_sample}min',
-            local_scaler_type=args.scaler
+            local_scaler_type=args.scaler,
         )
 
         print(train.head())
         train = train.rename(columns={'time': 'ds', 'cgm': 'y'})
         test = test.rename(columns={'time': 'ds', 'cgm': 'y'})
 
-        nf.fit(df=train, val_size=12)
+        nf.fit(df=train, val_size=12, epochs=args.n_epochs)
         forecasts = nf.predict(df=test, verbose=True)
 
         print(forecasts)
