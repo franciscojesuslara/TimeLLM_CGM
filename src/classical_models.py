@@ -12,15 +12,16 @@ import utils.constants as cons
 from utils.plotter import plot_results, plot_metric
 import pandas as pd
 
+
 def parse_arguments(parser):
-    parser.add_argument('--dataset_name', type=str, default='Ohio')
+    parser.add_argument('--dataset_name', type=str, default='vivli_mdi')
     parser.add_argument('--prediction_horizon', type=int, default=24)
     parser.add_argument('--ts_length', type=int, default=288)
     parser.add_argument('--n_samples', type=int, default=12)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=100)
     parser.add_argument('--n_trials', type=int, default=50)
-    parser.add_argument('--read_plot', type=bool, default=False)
+    parser.add_argument('--read_plot', type=bool, default=True)
     parser.add_argument('--n_windows', type=int, default=50)
     parser.add_argument('--step_size', type=int, default=1)
     parser.add_argument('--freq_sample', type=int, default=5)
@@ -38,6 +39,7 @@ def check_sparsity(m_data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='LLM forecasting')
     args = parse_arguments(parser)
+
 
 
     if args.read_plot:
@@ -76,7 +78,7 @@ if __name__ == "__main__":
             'rmse_mean': best_model_per_patient_test['rmse_test'].mean(),
             'rmse_std': best_model_per_patient_test['rmse_test'].std()}
 
-        aggregated_losses_test = aggregated_losses_test.append(personalized_test, ignore_index=True)
+        aggregated_losses_test = pd.concat([aggregated_losses_test, personalized_test])
 
         aggregated_losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                     f'aggregated_losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))

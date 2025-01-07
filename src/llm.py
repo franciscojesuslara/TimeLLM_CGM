@@ -205,7 +205,7 @@ if __name__ == "__main__":
         aggregated_losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                             f'aggregated_losses_test_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
         losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                            f'losses_test_{args.dataset_name}_{args.model_name}_{args.model_name}.csv'))
+                            f'losses_test_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
         aggregated_losses_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                             f'aggregated_losses_val_{args.dataset_name}_{args.model_name}_{args.prediction_horizon}.csv'))
 

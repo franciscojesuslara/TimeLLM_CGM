@@ -5,18 +5,20 @@ from utils.metrics import evaluate_performance
 from utils.plotter import plot_results, plot_metric, clarke_error_grid, plot_error_iso15197_acceptable_zone, plot_line
 import numpy as np
 from utils.extract_series_llm import extract_series_general
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def load_files(name, database_name, prediction_horizon):
     df = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                            f'{name}_{database_name}_{prediction_horizon}.csv'))
 
-    gpt = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,'llm',
+    gpt = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                            f'{name}_{database_name}_gpt_{prediction_horizon}.csv'))
 
-    bert = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,'llm',
+    bert = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
                                            f'{name}_{database_name}_bert_{prediction_horizon}.csv'))
     return df, bert, gpt
-def merge_function(prediction_horizon, database_name):
+def merge_function(prediction_horizon, database_name, plot_boxplots=True, CEG = True):
     forecast, bert_forecast, gpt_forecast= load_files('forecasts', database_name, prediction_horizon)
 
     gpt_forecast = gpt_forecast.rename(columns={'TimeLLM': 'GPT'})
@@ -94,8 +96,28 @@ def merge_function(prediction_horizon, database_name):
             iso.append(df)
     print(len(iso))
 
-    clarke_error_grid(real, pred, f'clarck_{database_name}_{prediction_horizon}_personalized',
-    f'PH = {prediction_horizon2} min using the personalized approach')
+    # if plot_boxplots:
+    #     # losses_test = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
+    #     #                                        f'losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))
+    #     # losses_test_grouped = losses_test.groupby('model')['mae'].apply(list)
+    #
+    #     df = pd.DataFrame(dict(losses_test_grouped))
+    #
+    #     plt.figure(figsize=(8, 6))
+    #     sns.boxplot(data=df, palette='Set2', showfliers=False)
+    #
+    #     # Configurar etiquetas y título
+    #     plt.title('Boxplot of MAE for Each Model', fontsize=14)
+    #     plt.xlabel('Model', fontsize=12)
+    #     plt.ylabel('MAE', fontsize=12)
+    #
+    #     # Mostrar el gráfico
+    #     plt.show()
+
+    if CEG:
+
+        clarke_error_grid(real, pred, f'clarck_{database_name}_{prediction_horizon}_personalized',
+        f'PH = {prediction_horizon2} min using the personalized approach')
 
     # plot_error_iso15197_acceptable_zone(np.asarray(real), np.asarray(pred))
 
@@ -140,26 +162,26 @@ def plot_prediction(name_dataset, ph):
                  ids=['1695_1'])
 
 
-
-plot_prediction('vivli_pump', 6)
-
-merge_function(8, 'vivli_pump')
-merge_function(6, 'vivli_pump')
 merge_function(4, 'vivli_pump')
-
-merge_function(8, 'vivli_mdi')
-merge_function(6, 'vivli_mdi')
-merge_function(4, 'vivli_mdi')
-
-
-df_mdi=pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS, 'merged','model_vivli_mdi.csv'))
-df_pump = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS, 'merged', 'model_vivli_pump.csv'))
-df_mdi = df_mdi.rename(columns={'Unnamed: 0': 'Model'})
-df_pump = df_pump.rename(columns={'Unnamed: 0': 'Model'})
-df_mdi['Model'] = df_mdi['Model'].str.replace(r'^Auto', '', regex=True)
-df_pump['Model'] = df_pump['Model'].str.replace(r'^Auto', '', regex=True)
-df_mdi = df_mdi.sort_values(['Model'])
-df_pump = df_pump.sort_values(['Model'])
-
-plot_line(df_mdi, 'MDI')
-plot_line(df_pump, 'PUMP')
+# plot_prediction('vivli_pump', 6)
+#
+# merge_function(8, 'vivli_pump')
+# merge_function(6, 'vivli_pump')
+# merge_function(4, 'vivli_pump')
+#
+# merge_function(8, 'vivli_mdi')
+# merge_function(6, 'vivli_mdi')
+# merge_function(4, 'vivli_mdi')
+#
+#
+# df_mdi=pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS, 'merged','model_vivli_mdi.csv'))
+# df_pump = pd.read_csv(os.path.join(cons.PATH_PROJECT_REPORTS, 'merged', 'model_vivli_pump.csv'))
+# df_mdi = df_mdi.rename(columns={'Unnamed: 0': 'Model'})
+# df_pump = df_pump.rename(columns={'Unnamed: 0': 'Model'})
+# df_mdi['Model'] = df_mdi['Model'].str.replace(r'^Auto', '', regex=True)
+# df_pump['Model'] = df_pump['Model'].str.replace(r'^Auto', '', regex=True)
+# df_mdi = df_mdi.sort_values(['Model'])
+# df_pump = df_pump.sort_values(['Model'])
+#
+# plot_line(df_mdi, 'MDI')
+# plot_line(df_pump, 'PUMP')
