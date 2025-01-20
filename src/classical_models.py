@@ -14,19 +14,20 @@ import pandas as pd
 
 
 def parse_arguments(parser):
-    parser.add_argument('--dataset_name', type=str, default='vivli_mdi')
-    parser.add_argument('--prediction_horizon', type=int, default=24)
-    parser.add_argument('--ts_length', type=int, default=288)
-    parser.add_argument('--n_samples', type=int, default=12)
+    parser.add_argument('--dataset_name', type=str, default='Ohio')
+    parser.add_argument('--prediction_horizon', type=int, default=6)
+    parser.add_argument('--ts_length', type=int, default=96)
+    parser.add_argument('--n_samples', type=int, default=50)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--num_workers_loader', type=int, default=100)
-    parser.add_argument('--n_trials', type=int, default=50)
-    parser.add_argument('--read_plot', type=bool, default=True)
+    parser.add_argument('--n_trials', type=int, default=20)
+    parser.add_argument('--read_plot', type=bool, default=False)
     parser.add_argument('--n_windows', type=int, default=50)
     parser.add_argument('--step_size', type=int, default=1)
-    parser.add_argument('--freq_sample', type=int, default=5)
+    parser.add_argument('--freq_sample', type=int, default=15)
     parser.add_argument('--test_iterations', type=int, default=5)
-    parser.add_argument('--test_step_size', type=int, default=24)
+    parser.add_argument('--test_step_size', type=int, default=8)
+    parser.add_argument('--gpu_device', type=int, default=0)
     return parser.parse_args()
 
 
@@ -102,9 +103,21 @@ if __name__ == "__main__":
                                                  n_windows=args.n_windows,
                                                  )
 
+        # test = test.sort_values(by=['unique_id', 'time'])
+        # test = test.reset_index(drop=True)
+        # for iterations in np.arange(args.test_iterations):
+        #     test_samples = iterations * args.test_step_size + args.ts_length
+        #     df_to_predict = test.groupby("unique_id").apply(lambda x: x.iloc[:test_samples])
+        #     df_real = test.groupby("unique_id").apply(
+        #         lambda x: x.iloc[test_samples:test_samples + args.prediction_horizon])
+        #     print(1)
+        #
         print(test['unique_id'].value_counts())
 
         start_time = time.time()
+        if args.gpu_device > -1:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_device)
+
 
         model_list = [
             AutoTCN(h=args.prediction_horizon, config=cons.config_tcn,
@@ -130,6 +143,8 @@ if __name__ == "__main__":
         ]
 
             # TODO add local scaler param 'standard', 'robust', 'robust-iqr', 'minmax' or 'boxcox'
+
+
         nf = NeuralForecast(
             models = model_list,
             freq = f'{args.freq_sample}min'
@@ -142,7 +157,8 @@ if __name__ == "__main__":
             target_col="cgm",
             verbose=True,
             n_windows=args.n_windows,
-            step_size=args.step_size)
+            step_size=args.step_size,
+        )
 
 
 
@@ -173,7 +189,7 @@ if __name__ == "__main__":
         result_intra = df_loses_test.groupby(["unique_id", "model"])[['mse', 'mae', 'rmse']].agg(["mean", "std"]).reset_index()
         result_intra.columns = ['_'.join(col).strip() for col in result_intra.columns.values]
         result_intra.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                             f'results_intra_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                             f'results_intra_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         losses_test, aggregated_losses_test, best_model_per_patient_test = evaluate_performance(forecasts_test, columns_list, best_model_per_patient_val)
         train = train.reset_index()
         test = test.reset_index()
@@ -202,19 +218,19 @@ if __name__ == "__main__":
         aggregated_losses_test = pd.concat([aggregated_losses_test, personalized_test], ignore_index=True)
 
         forecasts_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'forecasts_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'forecasts_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         aggregated_losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'aggregated_losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'aggregated_losses_test_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         best_model_per_patient_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'best_model_per_patient_test_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'best_model_per_patient_test_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         losses_test.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'losses_test_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'losses_test_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         aggregated_losses_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'aggregated_losses_val_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'aggregated_losses_val_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         best_model_per_patient_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'best_model_per_patient_val_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'best_model_per_patient_val_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
         losses_val.to_csv(os.path.join(cons.PATH_PROJECT_REPORTS,
-                                    f'losses_val_{args.dataset_name}_{args.prediction_horizon}.csv'))
+                                    f'losses_val_{args.dataset_name}_{args.prediction_horizon}_{args.freq_sample}.csv'))
 
 
 

@@ -128,13 +128,29 @@ def extract_series_general(dataset_name='vivli_mdi', n_samples=None, prediction_
             # df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:-prediction_horizon]
             # train = pd.concat([train, df_valor])
 
-            train_size=ts_length + step_size* n_windows + prediction_horizon
 
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:train_size]
-            train = pd.concat([train, df_valor])
+            train_size=ts_length + step_size* n_windows + prediction_horizon +10
 
-            df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size:]
-            test = pd.concat([test, df_valor])
+
+            if valor in ['544_205', '563_579','584_288']:
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][int(120/freq_sample):
+                                                                                      int(train_size +120/freq_sample)]
+                train = pd.concat([train, df_valor])
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size + int(120/freq_sample):]
+                test = pd.concat([test, df_valor])
+
+            elif valor in [ '540_372', '596_1802', '570_2']:
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][
+                           int(720 / freq_sample) :int(train_size + 720 / freq_sample)]
+                train = pd.concat([train, df_valor])
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size + int(720/freq_sample):]
+                test = pd.concat([test, df_valor])
+
+            else:
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][:train_size]
+                train = pd.concat([train, df_valor])
+                df_valor = dataframe_general[dataframe_general['unique_id'] == valor][train_size:]
+                test = pd.concat([test, df_valor])
     else:
         for valor in dataframe_general['unique_id'].unique():
             # df_valor = dataframe_general[dataframe_general['unique_id'] == valor].tail(prediction_horizon)

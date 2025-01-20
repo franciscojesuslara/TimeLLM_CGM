@@ -2,7 +2,7 @@ from pathlib import Path
 from ray import tune
 import matplotlib.pyplot as plt
 PATH_PROJECT_DIR = Path(__file__).resolve().parents[2]
-PATH_PROJECT_REPORTS = Path.joinpath(PATH_PROJECT_DIR, 'reports')
+PATH_PROJECT_REPORTS = Path.joinpath(PATH_PROJECT_DIR, 'reports_old')
 PATH_PROJECT_DATA = Path.joinpath(PATH_PROJECT_DIR, 'data')
 PATH_PROJECT_MODELS = Path.joinpath(PATH_PROJECT_DIR, 'modelos')
 seeds=[0, 45, 34, 15]
